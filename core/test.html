@@ -1,0 +1,19 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tracker core test</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="core.js"></script>
+<style>body{font:14px sans-serif;margin:10px}#map{height:300px}button{margin:2px}</style></head><body>
+<div id="map"></div>
+<button onclick="C.isSharing()?C.stopSharing():C.startSharing()">Toggle my sharing</button>
+<button onclick="C.invite({name:'Mum',phone:'0400000000'})">Invite Mum (pretend)</button>
+<button onclick="C.reset();list()">Reset</button>
+<div id="inv"></div><pre id="log"></pre>
+<script>
+var C=TRACKER_CORE;C.initMap('map');
+function list(){inv.innerHTML=C.getInvites().map(function(p){return p.name+' — '+p.status+(p.sharing?' (sharing, demo)':'')+
+ (p.status==='texted'?' <button onclick="C.respond(\''+p.id+'\',true);list()">Yes</button><button onclick="C.respond(\''+p.id+'\',false);list()">No</button>':'')+
+ (p.sharing?' <button onclick="C.stopPerson(\''+p.id+'\');list()">Stop</button>':'')}).join('<br>')}
+['inviteSent','calling','noAnswer','texted','accepted','declined','locationUpdate','sharingStopped'].forEach(function(e){C.on(e,function(d){log.textContent=e+' '+JSON.stringify(d)+'\n'+log.textContent;list()})});
+list();
+</script></body></html>

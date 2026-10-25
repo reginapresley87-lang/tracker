@@ -1,0 +1,29 @@
+/* Tracker UI layer: load after the inline <style> */
+.screen{padding:calc(18px + env(safe-area-inset-top,0px)) calc(18px + env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) calc(18px + env(safe-area-inset-left,0px));min-height:100dvh}
+body{padding:0}
+h1{font-size:40px;text-shadow:0 3px 14px #0004}
+h2{text-shadow:0 2px 10px #0003}
+button{transition:transform .08s,filter .15s;-webkit-tap-highlight-color:transparent}
+button:active{transform:scale(.97);filter:brightness(.92)}
+button:disabled{opacity:.5}
+input:focus{outline:none;border-color:#4f46e5;box-shadow:0 0 0 3px #c7d2fe}
+#map{height:48dvh;min-height:220px;box-shadow:0 8px 24px #0003}
+.pill{min-height:52px;gap:10px}
+.pill b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log{background:#f5f3ff;border-radius:12px;padding:10px 12px}
+.log:empty{display:none}
+#codebox input{letter-spacing:6px;font-size:22px;text-align:center}
+footer{opacity:.9}
+@media (orientation:landscape) and (max-height:500px){
+ .screen{max-width:none;gap:10px}
+ h1{margin-top:4px;font-size:30px}
+ #s-welcome .card,#s-phone .card,#s-invite .card,#s-ask .card{max-width:460px;width:100%;margin:0 auto}
+ #s-home.on{display:grid;grid-template-columns:1.4fr 1fr;grid-template-rows:auto 1fr auto;column-gap:14px}
+ #s-home h2{grid-column:1/-1}
+ #s-home #map{height:auto;min-height:0;grid-row:2}
+ #s-home .card{grid-row:2;overflow:auto}
+ #s-home footer{grid-column:1/-1;padding:2px}
+}
+#codebox{width:100%}
+#codebox input{min-width:0;width:0;flex:1 1 auto;letter-spacing:4px}
+#codebox button{flex:0 0 auto}

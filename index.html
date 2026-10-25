@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tracker">
+<meta name="theme-color" content="#4f46e5">
+<title>Tracker</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="audio/audio.js"></script>
+<script src="core/core.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,system-ui,sans-serif}
+body{background:linear-gradient(160deg,#6366f1,#ec4899);min-height:100vh;color:#1e1b4b;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.screen{display:none;padding:24px;max-width:480px;margin:0 auto;min-height:100vh;flex-direction:column;gap:14px}
+.screen.on{display:flex}
+h1{color:#fff;font-size:34px;text-align:center;margin-top:30px}
+h2{color:#fff;font-size:24px}
+p.sub{color:#e0e7ff;text-align:center}
+.card{background:#fff;border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 8px 24px #0003}
+button{min-height:52px;border:none;border-radius:14px;font-size:17px;font-weight:600;cursor:pointer}
+.pri{background:#4f46e5;color:#fff}.g{background:#fff;color:#111;border:2px solid #ddd}.a{background:#000;color:#fff}
+.ok{background:#16a34a;color:#fff}.no{background:#ef4444;color:#fff}
+input{min-height:50px;border:2px solid #c7d2fe;border-radius:12px;padding:0 14px;font-size:16px}
+#map{height:55vh;border-radius:20px}
+.row{display:flex;gap:10px;align-items:center}
+.pill{background:#eef2ff;border-radius:12px;padding:10px;display:flex;justify-content:space-between;align-items:center}
+.log{font-size:15px;line-height:1.7}
+.demo{font-size:12px;color:#fde68a;text-align:center}
+footer{color:#fff;text-align:center;font-size:13px;margin-top:auto;padding:10px}
+</style>
+<link rel="stylesheet" href="ui/ui.css"></head><body>
+
+<section class="screen on" id="s-welcome">
+ <h1>📍 Tracker</h1><p class="sub">See where your family and friends are, only when they say yes.</p>
+ <div class="card">
+  <button class="g" onclick="signIn('Google')">Sign up with Google</button>
+  <button class="a" onclick="signIn('Apple')"> Sign up with Apple</button>
+ </div>
+ <p class="demo">Demo version: sign-in, calls and texts are pretend for now.</p>
+ <footer>Made by Nova Labs ⭐</footer>
+</section>
+
+<section class="screen" id="s-phone">
+ <h2>Verify your phone</h2>
+ <div class="card">
+  <input id="name" placeholder="Your name">
+  <input id="phone" type="tel" placeholder="Phone number">
+  <button class="pri" onclick="sendCode()">Call me with a code</button>
+  <div id="codebox" style="display:none" class="row">
+   <input id="code" inputmode="numeric" placeholder="6-digit code" style="flex:1">
+   <button class="pri" style="padding:0 18px" onclick="checkCode()">Verify</button>
+  </div>
+  <div id="phonemsg" class="log"></div>
+ </div>
+ <footer>Made by Nova Labs ⭐</footer>
+</section>
+
+<section class="screen" id="s-home">
+ <h2>Hi, <span id="me"></span> 👋</h2>
+ <div id="map"></div>
+ <div class="card">
+  <div class="row"><b style="flex:1">My circle</b><button class="pri" style="padding:0 16px" onclick="show('s-invite')">+ Invite</button></div>
+  <div id="people"></div>
+  <button id="sharebtn" class="ok" onclick="toggleShare()">Share my location</button>
+ </div>
+ <footer>Made by Nova Labs ⭐</footer>
+</section>
+
+<section class="screen" id="s-invite">
+ <h2>Invite someone</h2>
+ <div class="card">
+  <input id="iname" placeholder="Their name (e.g. Mum)">
+  <input id="iphone" type="tel" placeholder="Their phone number">
+  <input id="iemail" type="email" placeholder="Their email (optional)">
+  <button class="pri" onclick="invite()">Call them to ask</button>
+  <div id="invlog" class="log"></div>
+  <button class="g" onclick="show('s-home')">Back</button>
+ </div>
+ <footer>Made by Nova Labs ⭐</footer>
+</section>
+
+<section class="screen" id="s-ask">
+ <h2>📞 Their phone</h2>
+ <div class="card">
+  <p id="askmsg" style="font-size:18px"></p>
+  <button class="ok" onclick="answer(true)">Yes, share my location</button>
+  <button class="no" onclick="answer(false)">No thanks</button>
+ </div>
+ <p class="demo">This is what the other person sees.</p>
+ <footer>Made by Nova Labs ⭐</footer>
+</section>
+
+<script>
+const S=JSON.parse(localStorage.tracker||'{}');
+const save=()=>localStorage.tracker=JSON.stringify(S);
+const C=window.TRACKER_CORE,A=window.TRACKER_AUDIO||{};
+const snd=n=>{try{A[n]&&A[n]()}catch(e){}};try{A.init&&A.init()}catch(e){}
+document.addEventListener('click',e=>{if(e.target.tagName==='BUTTON')snd('tap')});
+let mapReady=false,code,askId=null;
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));if(id==='s-home')home();}
+function signIn(p){S.provider=p;save();show('s-phone')}
+function sendCode(){const ph=phone.value.trim();if(ph.length<6)return phonemsg.textContent='Please enter your phone number.';
+ code=String(Math.floor(100000+Math.random()*900000));snd('ringStart');setTimeout(()=>snd('ringStop'),2000);
+ phonemsg.innerHTML='📞 Calling '+ph+'…<br>🤖 "Hi! Your Tracker code is '+code.split('').join(' ')+'."';codebox.style.display='flex'}
+function checkCode(){if(document.getElementById('code').value.trim()!==code){snd('error');return phonemsg.innerHTML+='<br>❌ That code doesn\'t match.'}
+ S.name=document.getElementById('name').value.trim()||'Me';S.phone=phone.value.trim();S.verified=true;save();snd('verified');show('s-home')}
+function invite(){const n=iname.value.trim(),ph=iphone.value.trim();if(!n||!ph)return invlog.textContent='Add their name and phone number.';
+ invlog.innerHTML='';C.invite({name:n,phone:ph,email:iemail.value.trim()});}
+C.on('calling',p=>{invlog.innerHTML+='📞 Calling '+p.name+'…'});
+C.on('noAnswer',p=>{invlog.innerHTML+='<br>No answer.'});
+C.on('texted',p=>{invlog.innerHTML+='<br>💬 Text sent: "'+(S.name||'Someone')+' wants to share locations with you on Tracker. Tap to say yes or no. You won\'t be shown on any map unless you tap Yes, and you can stop any time."';
+ askId=p.id;setTimeout(()=>{askmsg.textContent=(S.name||'Someone')+' wants to see where you are on Tracker. Do you agree? You won\'t be shown on any map unless you tap Yes, and you can stop any time.';show('s-ask')},1200)});
+['accepted','declined','sharingStopped','locationUpdate'].forEach(e=>C.on(e,()=>{if(document.getElementById('s-home').classList.contains('on'))home()}));
+function answer(yes){if(askId)C.respond(askId,yes);askId=null;show('s-home')}
+function toggleShare(){if(C.isSharing()){C.stopSharing();setTimeout(()=>alert("You've stopped sharing. Nobody can see your location now."),150)}else C.startSharing();setTimeout(home,100)}
+function home(){me.textContent=S.name||'';
+ if(!mapReady){C.initMap('map');mapReady=true}
+ const st={accepted:'🟢 Sharing',declined:'🔴 Said no',invited:'⏳ Inviting',calling:'📞 Calling',no_answer:'📞 No answer',texted:'⏳ Waiting for yes'};
+ const list=C.getInvites();
+ people.innerHTML=list.map(p=>{const s=p.status==='accepted'&&!p.sharing?'⚪ Stopped':st[p.status]||p.status;
+  return '<div class="pill"><span>'+p.name.replace(/</g,'&lt;')+'</span><span>'+s+' <button class="g" style="min-height:44px;padding:0 12px" onclick="C.removeInvite(\''+p.id+'\');home()">✕</button></span></div>'}).join('')||'<p>No one yet. Invite family or friends!</p>';
+ const on=C.isSharing();sharebtn.textContent=on?'Stop sharing my location':'Share my location';sharebtn.className=on?'no':'ok'}
+if(S.verified)show('s-home');
+</script></body></html>
