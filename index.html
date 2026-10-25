@@ -114,7 +114,8 @@ C.on('texted',p=>{invlog.innerHTML+='<br>💬 Text sent: "'+(S.name||'Someone')+
  askId=p.id;setTimeout(()=>{askmsg.textContent=(S.name||'Someone')+' wants to see where you are on Tracker. Do you agree? You won\'t be shown on any map unless you tap Yes, and you can stop any time.';show('s-ask')},1200)});
 ['accepted','declined','sharingStopped','locationUpdate'].forEach(e=>C.on(e,()=>{if(document.getElementById('s-home').classList.contains('on'))home()}));
 function answer(yes){if(askId)C.respond(askId,yes);askId=null;show('s-home')}
-function toggleShare(){if(C.isSharing()){C.stopSharing();setTimeout(()=>alert("You've stopped sharing. Nobody can see your location now."),150)}else C.startSharing();setTimeout(home,100)}
+function toast(m){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.setAttribute('role','status');t.style.cssText='position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:88vw;background:#1e2a44;color:#fff;padding:14px 18px;border-radius:14px;font-size:16px;box-shadow:0 6px 24px rgba(0,0,0,.35);z-index:9999;text-align:center;transition:opacity .3s';document.body.appendChild(t)}t.textContent=m;t.style.opacity='1';clearTimeout(t._h);t._h=setTimeout(()=>t.style.opacity='0',3500)}
+function toggleShare(){if(C.isSharing()){C.stopSharing();toast("You've stopped sharing. Nobody can see your location now.")}else C.startSharing();setTimeout(home,100)}
 function home(){me.textContent=S.name||'';
  if(!mapReady){C.initMap('map');mapReady=true}
  const st={accepted:'🟢 Sharing',declined:'🔴 Said no',invited:'⏳ Inviting',calling:'📞 Calling',no_answer:'📞 No answer',texted:'⏳ Waiting for yes'};
